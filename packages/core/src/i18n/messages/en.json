@@ -17,6 +17,7 @@
     "default-channel-not-found": "Default channel not found",
     "entity-has-no-translation-in-language": "Translatable entity '{ entityName }' has not been translated into the requested language ({ languageCode })",
     "entity-with-id-not-found": "No { entityName } with the id '{ id }' could be found",
+    "facetfilterinput-invalid-input": "A FacetValueFilterInput object may not specify the 'and' and 'or' fields simultaneously",
     "field-invalid-datetime-range-max": "The custom field '{ name }' value [{ value }] is greater than the maximum [{ max }]",
     "field-invalid-datetime-range-min": "The custom field '{ name }' value [{ value }] is less than the minimum [{ min }]",
     "field-invalid-non-nullable": "The custom field '{ name }' value cannot be set to null",
@@ -27,6 +28,7 @@
     "field-invalid-string-pattern": "The custom field '{ name }' value ['{ value }'] does not match the pattern [{ pattern }]",
     "forbidden": "You are not currently authorized to perform this action",
     "invalid-sort-field": "The sort field '{ fieldName }' is invalid. Valid fields are: { validFields }",
+    "list-query-limit-exceeded": "Cannot take more than { limit } results from a list query",
     "no-active-tax-zone": "The active tax zone could not be determined. Ensure a default tax zone is set for the current channel.",
     "no-configurable-operation-def-with-code-found": "No { type } with the code '{ code }' could be found",
     "no-price-found-for-channel": "No price information was found for ProductVariant ID '{ variantId}' in the Channel '{ channel }'.",
@@ -108,6 +110,7 @@
     "facet-used": "The selected Facet includes FacetValues which are assigned to {products, plural, =0 {} one {1 Product} other {# Products}}{both, select, both { , } single {}}{variants, plural, =0 {} one {1 ProductVariant} other {# ProductVariants}}",
     "facet-value-force-deleted": "The selected FacetValue was removed from {products, plural, =0 {} one {1 Product} other {# Products}}{both, select, both { , } single {}}{variants, plural, =0 {} one {1 ProductVariant} other {# ProductVariants}} and deleted",
     "facet-value-used": "The selected FacetValue is assigned to {products, plural, =0 {} one {1 Product} other {# Products}}{both, select, both { , } single {}}{variants, plural, =0 {} one {1 ProductVariant} other {# ProductVariants}}",
+    "payment-method-used-in-channels": "The selected PaymentMethod is assigned to the following Channels: { channelCodes }. Set \"force: true\" to delete from all Channels.",
     "zone-used-in-channels": "The selected Zone cannot be deleted as it used as a default in the following Channels: { channelCodes }",
     "zone-used-in-tax-rates": "The selected Zone cannot be deleted as it is used in the following TaxRates: { taxRateNames }"
   }

@@ -60,7 +60,7 @@ export type Query = {
     products: ProductList;
     /** Get a Product either by id or slug. If neither id nor slug is speicified, an error will result. */
     product?: Maybe<Product>;
-    /** List ProductVariants */
+    /** List ProductVariants either all or for the specific product. */
     productVariants: ProductVariantList;
     /** Get a ProductVariant by id */
     productVariant?: Maybe<ProductVariant>;
@@ -199,6 +199,7 @@ export type QueryProductArgs = {
 
 export type QueryProductVariantsArgs = {
     options?: Maybe<ProductVariantListOptions>;
+    productId?: Maybe<Scalars['ID']>;
 };
 
 export type QueryProductVariantArgs = {
@@ -377,6 +378,8 @@ export type Mutation = {
     createPaymentMethod: PaymentMethod;
     /** Update an existing PaymentMethod */
     updatePaymentMethod: PaymentMethod;
+    /** Delete a PaymentMethod */
+    deletePaymentMethod: DeletionResponse;
     /** Create a new ProductOptionGroup */
     createProductOptionGroup: ProductOptionGroup;
     /** Update an existing ProductOptionGroup */
@@ -719,6 +722,11 @@ export type MutationCreatePaymentMethodArgs = {
 
 export type MutationUpdatePaymentMethodArgs = {
     input: UpdatePaymentMethodInput;
+};
+
+export type MutationDeletePaymentMethodArgs = {
+    id: Scalars['ID'];
+    force?: Maybe<Scalars['Boolean']>;
 };
 
 export type MutationCreateProductOptionGroupArgs = {
@@ -1465,6 +1473,41 @@ export type OrderModification = Node & {
     payment?: Maybe<Payment>;
     refund?: Maybe<Refund>;
     isSettled: Scalars['Boolean'];
+};
+
+export type OrderFilterParameter = {
+    createdAt?: Maybe<DateOperators>;
+    updatedAt?: Maybe<DateOperators>;
+    orderPlacedAt?: Maybe<DateOperators>;
+    code?: Maybe<StringOperators>;
+    state?: Maybe<StringOperators>;
+    active?: Maybe<BooleanOperators>;
+    totalQuantity?: Maybe<NumberOperators>;
+    subTotal?: Maybe<NumberOperators>;
+    subTotalWithTax?: Maybe<NumberOperators>;
+    currencyCode?: Maybe<StringOperators>;
+    shipping?: Maybe<NumberOperators>;
+    shippingWithTax?: Maybe<NumberOperators>;
+    total?: Maybe<NumberOperators>;
+    totalWithTax?: Maybe<NumberOperators>;
+    customerLastName?: Maybe<StringOperators>;
+};
+
+export type OrderSortParameter = {
+    id?: Maybe<SortOrder>;
+    createdAt?: Maybe<SortOrder>;
+    updatedAt?: Maybe<SortOrder>;
+    orderPlacedAt?: Maybe<SortOrder>;
+    code?: Maybe<SortOrder>;
+    state?: Maybe<SortOrder>;
+    totalQuantity?: Maybe<SortOrder>;
+    subTotal?: Maybe<SortOrder>;
+    subTotalWithTax?: Maybe<SortOrder>;
+    shipping?: Maybe<SortOrder>;
+    shippingWithTax?: Maybe<SortOrder>;
+    total?: Maybe<SortOrder>;
+    totalWithTax?: Maybe<SortOrder>;
+    customerLastName?: Maybe<SortOrder>;
 };
 
 export type UpdateOrderInput = {
@@ -2698,10 +2741,24 @@ export type DateOperators = {
     between?: Maybe<DateRange>;
 };
 
+/**
+ * Used to construct boolean expressions for filtering search results
+ * by FacetValue ID. Examples:
+ *
+ * * ID=1 OR ID=2: `{ facetValueFilters: [{ or: [1,2] }] }`
+ * * ID=1 AND ID=2: `{ facetValueFilters: [{ and: 1 }, { and: 2 }] }`
+ * * ID=1 AND (ID=2 OR ID=3): `{ facetValueFilters: [{ and: 1 }, { or: [2,3] }] }`
+ */
+export type FacetValueFilterInput = {
+    and?: Maybe<Scalars['ID']>;
+    or?: Maybe<Array<Scalars['ID']>>;
+};
+
 export type SearchInput = {
     term?: Maybe<Scalars['String']>;
     facetValueIds?: Maybe<Array<Scalars['ID']>>;
     facetValueOperator?: Maybe<LogicalOperator>;
+    facetValueFilters?: Maybe<Array<FacetValueFilterInput>>;
     collectionId?: Maybe<Scalars['ID']>;
     collectionSlug?: Maybe<Scalars['String']>;
     groupByProduct?: Maybe<Scalars['Boolean']>;
@@ -2774,6 +2831,8 @@ export type ShippingMethodQuote = {
 export type PaymentMethodQuote = {
     id: Scalars['ID'];
     code: Scalars['String'];
+    name: Scalars['String'];
+    description: Scalars['String'];
     isEligible: Scalars['Boolean'];
     eligibilityMessage?: Maybe<Scalars['String']>;
 };
@@ -3802,7 +3861,7 @@ export type OrderLine = Node & {
     discounts: Array<Discount>;
     taxLines: Array<TaxLine>;
     order: Order;
-    customFields?: Maybe<Scalars['JSON']>;
+    customFields?: Maybe<OrderLineCustomFields>;
 };
 
 export type Refund = Node & {
@@ -4335,39 +4394,6 @@ export type JobSortParameter = {
     duration?: Maybe<SortOrder>;
 };
 
-export type OrderFilterParameter = {
-    createdAt?: Maybe<DateOperators>;
-    updatedAt?: Maybe<DateOperators>;
-    orderPlacedAt?: Maybe<DateOperators>;
-    code?: Maybe<StringOperators>;
-    state?: Maybe<StringOperators>;
-    active?: Maybe<BooleanOperators>;
-    totalQuantity?: Maybe<NumberOperators>;
-    subTotal?: Maybe<NumberOperators>;
-    subTotalWithTax?: Maybe<NumberOperators>;
-    currencyCode?: Maybe<StringOperators>;
-    shipping?: Maybe<NumberOperators>;
-    shippingWithTax?: Maybe<NumberOperators>;
-    total?: Maybe<NumberOperators>;
-    totalWithTax?: Maybe<NumberOperators>;
-};
-
-export type OrderSortParameter = {
-    id?: Maybe<SortOrder>;
-    createdAt?: Maybe<SortOrder>;
-    updatedAt?: Maybe<SortOrder>;
-    orderPlacedAt?: Maybe<SortOrder>;
-    code?: Maybe<SortOrder>;
-    state?: Maybe<SortOrder>;
-    totalQuantity?: Maybe<SortOrder>;
-    subTotal?: Maybe<SortOrder>;
-    subTotalWithTax?: Maybe<SortOrder>;
-    shipping?: Maybe<SortOrder>;
-    shippingWithTax?: Maybe<SortOrder>;
-    total?: Maybe<SortOrder>;
-    totalWithTax?: Maybe<SortOrder>;
-};
-
 export type PaymentMethodFilterParameter = {
     createdAt?: Maybe<DateOperators>;
     updatedAt?: Maybe<DateOperators>;
@@ -4535,6 +4561,14 @@ export type HistoryEntrySortParameter = {
     id?: Maybe<SortOrder>;
     createdAt?: Maybe<SortOrder>;
     updatedAt?: Maybe<SortOrder>;
+};
+
+export type OrderLineCustomFields = {
+    giftCardValue?: Maybe<Scalars['Int']>;
+    giftCardRecipientName?: Maybe<Scalars['String']>;
+    giftCardRecipientEmailAddress?: Maybe<Scalars['String']>;
+    giftCardMessage?: Maybe<Scalars['String']>;
+    giftCardDeliveryDate?: Maybe<Scalars['DateTime']>;
 };
 
 export type AuthenticationInput = {

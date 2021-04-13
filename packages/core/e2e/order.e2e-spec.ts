@@ -5,6 +5,7 @@ import {
     defaultShippingCalculator,
     defaultShippingEligibilityChecker,
     manualFulfillmentHandler,
+    mergeConfig,
 } from '@vendure/core';
 import {
     createErrorResultGuard,
@@ -104,17 +105,18 @@ import { assertThrowsWithMessage } from './utils/assert-throws-with-message';
 import { addPaymentToOrder, proceedToArrangingPayment, sortById } from './utils/test-order-utils';
 
 describe('Orders resolver', () => {
-    const { server, adminClient, shopClient } = createTestEnvironment({
-        ...testConfig,
-        paymentOptions: {
-            paymentMethodHandlers: [
-                twoStagePaymentMethod,
-                failsToSettlePaymentMethod,
-                singleStageRefundablePaymentMethod,
-                partialPaymentMethod,
-            ],
-        },
-    });
+    const { server, adminClient, shopClient } = createTestEnvironment(
+        mergeConfig(testConfig, {
+            paymentOptions: {
+                paymentMethodHandlers: [
+                    twoStagePaymentMethod,
+                    failsToSettlePaymentMethod,
+                    singleStageRefundablePaymentMethod,
+                    partialPaymentMethod,
+                ],
+            },
+        }),
+    );
     let customers: GetCustomerList.Items[];
     const password = 'test';
 
@@ -227,6 +229,7 @@ describe('Orders resolver', () => {
                         sort: {
                             total: SortOrder.DESC,
                         },
+                        take: 10,
                     },
                 },
             );
@@ -236,19 +239,21 @@ describe('Orders resolver', () => {
             ]);
         });
 
-        it('filter by totalWithTax', async () => {
+        it('sort by totalWithTax', async () => {
             const result = await adminClient.query<GetOrderList.Query, GetOrderList.Variables>(
                 GET_ORDERS_LIST,
                 {
                     options: {
-                        filter: {
-                            totalWithTax: { gt: 323760 },
+                        sort: {
+                            totalWithTax: SortOrder.DESC,
                         },
+                        take: 10,
                     },
                 },
             );
             expect(result.orders.items.map(o => pick(o, ['id', 'totalWithTax']))).toEqual([
                 { id: 'T_2', totalWithTax: 959520 },
+                { id: 'T_1', totalWithTax: 323760 },
             ]);
         });
 
@@ -260,12 +265,71 @@ describe('Orders resolver', () => {
                         sort: {
                             totalQuantity: SortOrder.DESC,
                         },
+                        take: 10,
                     },
                 },
             );
             expect(result.orders.items.map(o => pick(o, ['id', 'totalQuantity']))).toEqual([
                 { id: 'T_2', totalQuantity: 4 },
                 { id: 'T_1', totalQuantity: 2 },
+            ]);
+        });
+
+        it('sort by customerLastName', async () => {
+            async function sortOrdersByLastName(sortOrder: SortOrder) {
+                const { orders } = await adminClient.query<GetOrderList.Query, GetOrderList.Variables>(
+                    GET_ORDERS_LIST,
+                    {
+                        options: {
+                            sort: {
+                                customerLastName: sortOrder,
+                            },
+                        },
+                    },
+                );
+                return orders;
+            }
+
+            const result1 = await sortOrdersByLastName(SortOrder.ASC);
+            expect(result1.totalItems).toEqual(2);
+            expect(result1.items.map(order => order.customer?.lastName)).toEqual(['Donnelly', 'Zieme']);
+
+            const result2 = await sortOrdersByLastName(SortOrder.DESC);
+            expect(result2.totalItems).toEqual(2);
+            expect(result2.items.map(order => order.customer?.lastName)).toEqual(['Zieme', 'Donnelly']);
+        });
+
+        it('filter by total', async () => {
+            const result = await adminClient.query<GetOrderList.Query, GetOrderList.Variables>(
+                GET_ORDERS_LIST,
+                {
+                    options: {
+                        filter: {
+                            total: { gt: 323760 },
+                        },
+                        take: 10,
+                    },
+                },
+            );
+            expect(result.orders.items.map(o => pick(o, ['id', 'total']))).toEqual([
+                { id: 'T_2', total: 799600 },
+            ]);
+        });
+
+        it('filter by totalWithTax', async () => {
+            const result = await adminClient.query<GetOrderList.Query, GetOrderList.Variables>(
+                GET_ORDERS_LIST,
+                {
+                    options: {
+                        filter: {
+                            totalWithTax: { gt: 323760 },
+                        },
+                        take: 10,
+                    },
+                },
+            );
+            expect(result.orders.items.map(o => pick(o, ['id', 'totalWithTax']))).toEqual([
+                { id: 'T_2', totalWithTax: 959520 },
             ]);
         });
 
@@ -283,6 +347,23 @@ describe('Orders resolver', () => {
             expect(result.orders.items.map(o => pick(o, ['id', 'totalQuantity']))).toEqual([
                 { id: 'T_2', totalQuantity: 4 },
             ]);
+        });
+
+        it('filter by customerLastName', async () => {
+            const result = await adminClient.query<GetOrderList.Query, GetOrderList.Variables>(
+                GET_ORDERS_LIST,
+                {
+                    options: {
+                        filter: {
+                            customerLastName: {
+                                eq: customers[1].lastName,
+                            },
+                        },
+                    },
+                },
+            );
+            expect(result.orders.totalItems).toEqual(1);
+            expect(result.orders.items[0].customer?.lastName).toEqual(customers[1].lastName);
         });
     });
 
@@ -316,6 +397,7 @@ describe('Orders resolver', () => {
             });
 
             expect(result.order!.state).toBe('PaymentAuthorized');
+            expect(result.order!.payments![0].state).toBe('Cancelled');
             firstOrderCode = order.code;
             firstOrderId = order.id;
         });

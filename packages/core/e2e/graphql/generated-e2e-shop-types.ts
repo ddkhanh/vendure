@@ -703,10 +703,24 @@ export type DateOperators = {
     between?: Maybe<DateRange>;
 };
 
+/**
+ * Used to construct boolean expressions for filtering search results
+ * by FacetValue ID. Examples:
+ *
+ * * ID=1 OR ID=2: `{ facetValueFilters: [{ or: [1,2] }] }`
+ * * ID=1 AND ID=2: `{ facetValueFilters: [{ and: 1 }, { and: 2 }] }`
+ * * ID=1 AND (ID=2 OR ID=3): `{ facetValueFilters: [{ and: 1 }, { or: [2,3] }] }`
+ */
+export type FacetValueFilterInput = {
+    and?: Maybe<Scalars['ID']>;
+    or?: Maybe<Array<Scalars['ID']>>;
+};
+
 export type SearchInput = {
     term?: Maybe<Scalars['String']>;
     facetValueIds?: Maybe<Array<Scalars['ID']>>;
     facetValueOperator?: Maybe<LogicalOperator>;
+    facetValueFilters?: Maybe<Array<FacetValueFilterInput>>;
     collectionId?: Maybe<Scalars['ID']>;
     collectionSlug?: Maybe<Scalars['String']>;
     groupByProduct?: Maybe<Scalars['Boolean']>;
@@ -779,6 +793,8 @@ export type ShippingMethodQuote = {
 export type PaymentMethodQuote = {
     id: Scalars['ID'];
     code: Scalars['String'];
+    name: Scalars['String'];
+    description: Scalars['String'];
     isEligible: Scalars['Boolean'];
     eligibilityMessage?: Maybe<Scalars['String']>;
 };

@@ -335,6 +335,145 @@ describe('Product resolver', () => {
 
             expect(result.product).toBeNull();
         });
+
+        it('returns null when slug not found', async () => {
+            const result = await adminClient.query<
+                GetProductWithVariants.Query,
+                GetProductWithVariants.Variables
+            >(GET_PRODUCT_WITH_VARIANTS, {
+                slug: 'bad_slug',
+            });
+
+            expect(result.product).toBeNull();
+        });
+
+        describe('product query with translations', () => {
+            let translatedProduct: ProductWithVariants.Fragment;
+            let en_translation: ProductWithVariants.Translations;
+            let de_translation: ProductWithVariants.Translations;
+
+            beforeAll(async () => {
+                const result = await adminClient.query<CreateProduct.Mutation, CreateProduct.Variables>(
+                    CREATE_PRODUCT,
+                    {
+                        input: {
+                            translations: [
+                                {
+                                    languageCode: LanguageCode.en,
+                                    name: 'en Pineapple',
+                                    slug: 'en-pineapple',
+                                    description: 'A delicious pineapple',
+                                },
+                                {
+                                    languageCode: LanguageCode.de,
+                                    name: 'de Ananas',
+                                    slug: 'de-ananas',
+                                    description: 'Eine köstliche Ananas',
+                                },
+                            ],
+                        },
+                    },
+                );
+                translatedProduct = result.createProduct;
+                en_translation = translatedProduct.translations.find(
+                    t => t.languageCode === LanguageCode.en,
+                )!;
+                de_translation = translatedProduct.translations.find(
+                    t => t.languageCode === LanguageCode.de,
+                )!;
+            });
+
+            it('en slug without translation arg', async () => {
+                const { product } = await adminClient.query<
+                    GetProductSimple.Query,
+                    GetProductSimple.Variables
+                >(GET_PRODUCT_SIMPLE, { slug: en_translation.slug });
+
+                if (!product) {
+                    fail('Product not found');
+                    return;
+                }
+                expect(product.slug).toBe(en_translation.slug);
+            });
+
+            it('de slug without translation arg', async () => {
+                const { product } = await adminClient.query<
+                    GetProductSimple.Query,
+                    GetProductSimple.Variables
+                >(GET_PRODUCT_SIMPLE, { slug: de_translation.slug });
+
+                if (!product) {
+                    fail('Product not found');
+                    return;
+                }
+                expect(product.slug).toBe(en_translation.slug);
+            });
+
+            it('en slug with translation en', async () => {
+                const { product } = await adminClient.query<
+                    GetProductSimple.Query,
+                    GetProductSimple.Variables
+                >(GET_PRODUCT_SIMPLE, { slug: en_translation.slug }, { languageCode: LanguageCode.en });
+
+                if (!product) {
+                    fail('Product not found');
+                    return;
+                }
+                expect(product.slug).toBe(en_translation.slug);
+            });
+
+            it('de slug with translation en', async () => {
+                const { product } = await adminClient.query<
+                    GetProductSimple.Query,
+                    GetProductSimple.Variables
+                >(GET_PRODUCT_SIMPLE, { slug: de_translation.slug }, { languageCode: LanguageCode.en });
+
+                if (!product) {
+                    fail('Product not found');
+                    return;
+                }
+                expect(product.slug).toBe(en_translation.slug);
+            });
+
+            it('en slug with translation de', async () => {
+                const { product } = await adminClient.query<
+                    GetProductSimple.Query,
+                    GetProductSimple.Variables
+                >(GET_PRODUCT_SIMPLE, { slug: en_translation.slug }, { languageCode: LanguageCode.de });
+
+                if (!product) {
+                    fail('Product not found');
+                    return;
+                }
+                expect(product.slug).toBe(de_translation.slug);
+            });
+
+            it('de slug with translation de', async () => {
+                const { product } = await adminClient.query<
+                    GetProductSimple.Query,
+                    GetProductSimple.Variables
+                >(GET_PRODUCT_SIMPLE, { slug: de_translation.slug }, { languageCode: LanguageCode.de });
+
+                if (!product) {
+                    fail('Product not found');
+                    return;
+                }
+                expect(product.slug).toBe(de_translation.slug);
+            });
+
+            it('de slug with translation ru', async () => {
+                const { product } = await adminClient.query<
+                    GetProductSimple.Query,
+                    GetProductSimple.Variables
+                >(GET_PRODUCT_SIMPLE, { slug: de_translation.slug }, { languageCode: LanguageCode.ru });
+
+                if (!product) {
+                    fail('Product not found');
+                    return;
+                }
+                expect(product.slug).toBe(en_translation.slug);
+            });
+        });
     });
 
     describe('productVariants list query', () => {
@@ -356,18 +495,21 @@ describe('Product resolver', () => {
                     id: 'T_34',
                     name: 'Bonsai Tree',
                     price: 1999,
+                    priceWithTax: 2399,
                     sku: 'B01MXFLUSV',
                 },
                 {
                     id: 'T_24',
                     name: 'Boxing Gloves',
                     price: 3304,
+                    priceWithTax: 3965,
                     sku: 'B000ZYLPPU',
                 },
                 {
                     id: 'T_19',
                     name: 'Camera Lens',
                     price: 10400,
+                    priceWithTax: 12480,
                     sku: 'B0012UUP02',
                 },
             ]);
@@ -391,19 +533,159 @@ describe('Product resolver', () => {
                     id: 'T_23',
                     name: 'Skipping Rope',
                     price: 799,
+                    priceWithTax: 959,
                     sku: 'B07CNGXVXT',
                 },
                 {
                     id: 'T_20',
                     name: 'Tripod',
                     price: 1498,
+                    priceWithTax: 1798,
                     sku: 'B00XI87KV8',
                 },
                 {
                     id: 'T_32',
                     name: 'Spiky Cactus',
                     price: 1550,
+                    priceWithTax: 1860,
                     sku: 'SC011001',
+                },
+            ]);
+        });
+
+        it('sort by priceWithTax', async () => {
+            const { productVariants } = await adminClient.query<
+                GetProductVariantList.Query,
+                GetProductVariantList.Variables
+            >(GET_PRODUCT_VARIANT_LIST, {
+                options: {
+                    take: 3,
+                    sort: {
+                        priceWithTax: SortOrder.ASC,
+                    },
+                },
+            });
+
+            expect(productVariants.items).toEqual([
+                {
+                    id: 'T_23',
+                    name: 'Skipping Rope',
+                    price: 799,
+                    priceWithTax: 959,
+                    sku: 'B07CNGXVXT',
+                },
+                {
+                    id: 'T_20',
+                    name: 'Tripod',
+                    price: 1498,
+                    priceWithTax: 1798,
+                    sku: 'B00XI87KV8',
+                },
+                {
+                    id: 'T_32',
+                    name: 'Spiky Cactus',
+                    price: 1550,
+                    priceWithTax: 1860,
+                    sku: 'SC011001',
+                },
+            ]);
+        });
+
+        it('filter by price', async () => {
+            const { productVariants } = await adminClient.query<
+                GetProductVariantList.Query,
+                GetProductVariantList.Variables
+            >(GET_PRODUCT_VARIANT_LIST, {
+                options: {
+                    take: 3,
+                    filter: {
+                        price: {
+                            between: {
+                                start: 1400,
+                                end: 1500,
+                            },
+                        },
+                    },
+                },
+            });
+
+            expect(productVariants.items).toEqual([
+                {
+                    id: 'T_20',
+                    name: 'Tripod',
+                    price: 1498,
+                    priceWithTax: 1798,
+                    sku: 'B00XI87KV8',
+                },
+            ]);
+        });
+
+        it('filter by priceWithTax', async () => {
+            const { productVariants } = await adminClient.query<
+                GetProductVariantList.Query,
+                GetProductVariantList.Variables
+            >(GET_PRODUCT_VARIANT_LIST, {
+                options: {
+                    take: 3,
+                    filter: {
+                        priceWithTax: {
+                            between: {
+                                start: 1400,
+                                end: 1500,
+                            },
+                        },
+                    },
+                },
+            });
+
+            // Note the results are incorrect. This is a design trade-off. See the
+            // commend on the ProductVariant.priceWithTax annotation for explanation.
+            expect(productVariants.items).toEqual([
+                {
+                    id: 'T_20',
+                    name: 'Tripod',
+                    price: 1498,
+                    priceWithTax: 1798,
+                    sku: 'B00XI87KV8',
+                },
+            ]);
+        });
+
+        it('returns variants for particular product by id', async () => {
+            const { productVariants } = await adminClient.query<
+                GetProductVariantList.Query,
+                GetProductVariantList.Variables
+            >(GET_PRODUCT_VARIANT_LIST, {
+                options: {
+                    take: 3,
+                    sort: {
+                        price: SortOrder.ASC,
+                    },
+                },
+                productId: 'T_1',
+            });
+
+            expect(productVariants.items).toEqual([
+                {
+                    id: 'T_1',
+                    name: 'Laptop 13 inch 8GB',
+                    price: 129900,
+                    priceWithTax: 155880,
+                    sku: 'L2201308',
+                },
+                {
+                    id: 'T_2',
+                    name: 'Laptop 15 inch 8GB',
+                    price: 139900,
+                    priceWithTax: 167880,
+                    sku: 'L2201508',
+                },
+                {
+                    id: 'T_3',
+                    name: 'Laptop 13 inch 16GB',
+                    priceWithTax: 263880,
+                    price: 219900,
+                    sku: 'L2201316',
                 },
             ]);
         });
@@ -434,6 +716,7 @@ describe('Product resolver', () => {
     });
 
     describe('product mutation', () => {
+        let newTranslatedProduct: ProductWithVariants.Fragment;
         let newProduct: ProductWithVariants.Fragment;
         let newProductWithAssets: ProductWithVariants.Fragment;
 
@@ -464,7 +747,7 @@ describe('Product resolver', () => {
                 'A baked potato',
                 'Eine baked Erdapfel',
             ]);
-            newProduct = result.createProduct;
+            newTranslatedProduct = result.createProduct;
         });
 
         it('createProduct creates a new Product with assets', async () => {
@@ -1295,6 +1578,20 @@ describe('Product resolver', () => {
             );
             expect(result.createProduct.slug).toBe(productToDelete.slug);
         });
+
+        // https://github.com/vendure-ecommerce/vendure/issues/800
+        it('product can be fetched by slug of a deleted product', async () => {
+            const { product } = await adminClient.query<GetProductSimple.Query, GetProductSimple.Variables>(
+                GET_PRODUCT_SIMPLE,
+                { slug: productToDelete.slug },
+            );
+
+            if (!product) {
+                fail('Product not found');
+                return;
+            }
+            expect(product.slug).toBe(productToDelete.slug);
+        });
     });
 });
 
@@ -1336,13 +1633,14 @@ export const GET_PRODUCT_VARIANT = gql`
 `;
 
 export const GET_PRODUCT_VARIANT_LIST = gql`
-    query GetProductVariantLIST($options: ProductVariantListOptions) {
-        productVariants(options: $options) {
+    query GetProductVariantLIST($options: ProductVariantListOptions, $productId: ID) {
+        productVariants(options: $options, productId: $productId) {
             items {
                 id
                 name
                 sku
                 price
+                priceWithTax
             }
             totalItems
         }

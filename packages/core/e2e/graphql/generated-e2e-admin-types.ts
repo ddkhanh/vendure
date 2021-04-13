@@ -60,7 +60,7 @@ export type Query = {
     products: ProductList;
     /** Get a Product either by id or slug. If neither id nor slug is speicified, an error will result. */
     product?: Maybe<Product>;
-    /** List ProductVariants */
+    /** List ProductVariants either all or for the specific product. */
     productVariants: ProductVariantList;
     /** Get a ProductVariant by id */
     productVariant?: Maybe<ProductVariant>;
@@ -199,6 +199,7 @@ export type QueryProductArgs = {
 
 export type QueryProductVariantsArgs = {
     options?: Maybe<ProductVariantListOptions>;
+    productId?: Maybe<Scalars['ID']>;
 };
 
 export type QueryProductVariantArgs = {
@@ -377,6 +378,8 @@ export type Mutation = {
     createPaymentMethod: PaymentMethod;
     /** Update an existing PaymentMethod */
     updatePaymentMethod: PaymentMethod;
+    /** Delete a PaymentMethod */
+    deletePaymentMethod: DeletionResponse;
     /** Create a new ProductOptionGroup */
     createProductOptionGroup: ProductOptionGroup;
     /** Update an existing ProductOptionGroup */
@@ -719,6 +722,11 @@ export type MutationCreatePaymentMethodArgs = {
 
 export type MutationUpdatePaymentMethodArgs = {
     input: UpdatePaymentMethodInput;
+};
+
+export type MutationDeletePaymentMethodArgs = {
+    id: Scalars['ID'];
+    force?: Maybe<Scalars['Boolean']>;
 };
 
 export type MutationCreateProductOptionGroupArgs = {
@@ -1465,6 +1473,41 @@ export type OrderModification = Node & {
     payment?: Maybe<Payment>;
     refund?: Maybe<Refund>;
     isSettled: Scalars['Boolean'];
+};
+
+export type OrderFilterParameter = {
+    createdAt?: Maybe<DateOperators>;
+    updatedAt?: Maybe<DateOperators>;
+    orderPlacedAt?: Maybe<DateOperators>;
+    code?: Maybe<StringOperators>;
+    state?: Maybe<StringOperators>;
+    active?: Maybe<BooleanOperators>;
+    totalQuantity?: Maybe<NumberOperators>;
+    subTotal?: Maybe<NumberOperators>;
+    subTotalWithTax?: Maybe<NumberOperators>;
+    currencyCode?: Maybe<StringOperators>;
+    shipping?: Maybe<NumberOperators>;
+    shippingWithTax?: Maybe<NumberOperators>;
+    total?: Maybe<NumberOperators>;
+    totalWithTax?: Maybe<NumberOperators>;
+    customerLastName?: Maybe<StringOperators>;
+};
+
+export type OrderSortParameter = {
+    id?: Maybe<SortOrder>;
+    createdAt?: Maybe<SortOrder>;
+    updatedAt?: Maybe<SortOrder>;
+    orderPlacedAt?: Maybe<SortOrder>;
+    code?: Maybe<SortOrder>;
+    state?: Maybe<SortOrder>;
+    totalQuantity?: Maybe<SortOrder>;
+    subTotal?: Maybe<SortOrder>;
+    subTotalWithTax?: Maybe<SortOrder>;
+    shipping?: Maybe<SortOrder>;
+    shippingWithTax?: Maybe<SortOrder>;
+    total?: Maybe<SortOrder>;
+    totalWithTax?: Maybe<SortOrder>;
+    customerLastName?: Maybe<SortOrder>;
 };
 
 export type UpdateOrderInput = {
@@ -2698,10 +2741,24 @@ export type DateOperators = {
     between?: Maybe<DateRange>;
 };
 
+/**
+ * Used to construct boolean expressions for filtering search results
+ * by FacetValue ID. Examples:
+ *
+ * * ID=1 OR ID=2: `{ facetValueFilters: [{ or: [1,2] }] }`
+ * * ID=1 AND ID=2: `{ facetValueFilters: [{ and: 1 }, { and: 2 }] }`
+ * * ID=1 AND (ID=2 OR ID=3): `{ facetValueFilters: [{ and: 1 }, { or: [2,3] }] }`
+ */
+export type FacetValueFilterInput = {
+    and?: Maybe<Scalars['ID']>;
+    or?: Maybe<Array<Scalars['ID']>>;
+};
+
 export type SearchInput = {
     term?: Maybe<Scalars['String']>;
     facetValueIds?: Maybe<Array<Scalars['ID']>>;
     facetValueOperator?: Maybe<LogicalOperator>;
+    facetValueFilters?: Maybe<Array<FacetValueFilterInput>>;
     collectionId?: Maybe<Scalars['ID']>;
     collectionSlug?: Maybe<Scalars['String']>;
     groupByProduct?: Maybe<Scalars['Boolean']>;
@@ -2774,6 +2831,8 @@ export type ShippingMethodQuote = {
 export type PaymentMethodQuote = {
     id: Scalars['ID'];
     code: Scalars['String'];
+    name: Scalars['String'];
+    description: Scalars['String'];
     isEligible: Scalars['Boolean'];
     eligibilityMessage?: Maybe<Scalars['String']>;
 };
@@ -3802,7 +3861,7 @@ export type OrderLine = Node & {
     discounts: Array<Discount>;
     taxLines: Array<TaxLine>;
     order: Order;
-    customFields?: Maybe<Scalars['JSON']>;
+    customFields?: Maybe<OrderLineCustomFields>;
 };
 
 export type Refund = Node & {
@@ -4335,39 +4394,6 @@ export type JobSortParameter = {
     duration?: Maybe<SortOrder>;
 };
 
-export type OrderFilterParameter = {
-    createdAt?: Maybe<DateOperators>;
-    updatedAt?: Maybe<DateOperators>;
-    orderPlacedAt?: Maybe<DateOperators>;
-    code?: Maybe<StringOperators>;
-    state?: Maybe<StringOperators>;
-    active?: Maybe<BooleanOperators>;
-    totalQuantity?: Maybe<NumberOperators>;
-    subTotal?: Maybe<NumberOperators>;
-    subTotalWithTax?: Maybe<NumberOperators>;
-    currencyCode?: Maybe<StringOperators>;
-    shipping?: Maybe<NumberOperators>;
-    shippingWithTax?: Maybe<NumberOperators>;
-    total?: Maybe<NumberOperators>;
-    totalWithTax?: Maybe<NumberOperators>;
-};
-
-export type OrderSortParameter = {
-    id?: Maybe<SortOrder>;
-    createdAt?: Maybe<SortOrder>;
-    updatedAt?: Maybe<SortOrder>;
-    orderPlacedAt?: Maybe<SortOrder>;
-    code?: Maybe<SortOrder>;
-    state?: Maybe<SortOrder>;
-    totalQuantity?: Maybe<SortOrder>;
-    subTotal?: Maybe<SortOrder>;
-    subTotalWithTax?: Maybe<SortOrder>;
-    shipping?: Maybe<SortOrder>;
-    shippingWithTax?: Maybe<SortOrder>;
-    total?: Maybe<SortOrder>;
-    totalWithTax?: Maybe<SortOrder>;
-};
-
 export type PaymentMethodFilterParameter = {
     createdAt?: Maybe<DateOperators>;
     updatedAt?: Maybe<DateOperators>;
@@ -4537,6 +4563,14 @@ export type HistoryEntrySortParameter = {
     updatedAt?: Maybe<SortOrder>;
 };
 
+export type OrderLineCustomFields = {
+    giftCardValue?: Maybe<Scalars['Int']>;
+    giftCardRecipientName?: Maybe<Scalars['String']>;
+    giftCardRecipientEmailAddress?: Maybe<Scalars['String']>;
+    giftCardMessage?: Maybe<Scalars['String']>;
+    giftCardDeliveryDate?: Maybe<Scalars['DateTime']>;
+};
+
 export type AuthenticationInput = {
     native?: Maybe<NativeAuthInput>;
 };
@@ -4628,6 +4662,18 @@ export type CanCreateCustomerMutation = { createCustomer: Pick<Customer, 'id'> }
 export type GetCustomerCountQueryVariables = Exact<{ [key: string]: never }>;
 
 export type GetCustomerCountQuery = { customers: Pick<CustomerList, 'totalItems'> };
+
+export type DeepFieldResolutionTestQueryQueryVariables = Exact<{ [key: string]: never }>;
+
+export type DeepFieldResolutionTestQueryQuery = {
+    product?: Maybe<{
+        variants: Array<{
+            taxRateApplied: {
+                customerGroup?: Maybe<{ customers: { items: Array<Pick<Customer, 'id' | 'emailAddress'>> } }>;
+            };
+        }>;
+    }>;
+};
 
 export type AuthenticateMutationVariables = Exact<{
     input: AuthenticationInput;
@@ -5966,6 +6012,14 @@ export type RemovePromotionFromChannelMutation = {
     removePromotionsFromChannel: Array<Pick<Promotion, 'id' | 'name'>>;
 };
 
+export type GetTaxRatesQueryVariables = Exact<{
+    options?: Maybe<TaxRateListOptions>;
+}>;
+
+export type GetTaxRatesQuery = {
+    taxRates: Pick<TaxRateList, 'totalItems'> & { items: Array<TaxRateFragment> };
+};
+
 export type CancelJobMutationVariables = Exact<{
     id: Scalars['ID'];
 }>;
@@ -6209,6 +6263,15 @@ export type GetPaymentMethodListQuery = {
     paymentMethods: Pick<PaymentMethodList, 'totalItems'> & { items: Array<PaymentMethodFragment> };
 };
 
+export type DeletePaymentMethodMutationVariables = Exact<{
+    id: Scalars['ID'];
+    force?: Maybe<Scalars['Boolean']>;
+}>;
+
+export type DeletePaymentMethodMutation = {
+    deletePaymentMethod: Pick<DeletionResponse, 'message' | 'result'>;
+};
+
 export type TransitionPaymentToStateMutationVariables = Exact<{
     id: Scalars['ID'];
     state: Scalars['String'];
@@ -6281,11 +6344,12 @@ export type GetProductVariantQuery = { productVariant?: Maybe<Pick<ProductVarian
 
 export type GetProductVariantListQueryVariables = Exact<{
     options?: Maybe<ProductVariantListOptions>;
+    productId?: Maybe<Scalars['ID']>;
 }>;
 
 export type GetProductVariantListQuery = {
     productVariants: Pick<ProductVariantList, 'totalItems'> & {
-        items: Array<Pick<ProductVariant, 'id' | 'name' | 'sku' | 'price'>>;
+        items: Array<Pick<ProductVariant, 'id' | 'name' | 'sku' | 'price' | 'priceWithTax'>>;
     };
 };
 
@@ -6540,12 +6604,6 @@ export type DeleteTaxCategoryMutationVariables = Exact<{
 
 export type DeleteTaxCategoryMutation = { deleteTaxCategory: Pick<DeletionResponse, 'result' | 'message'> };
 
-export type GetTaxRatesQueryVariables = Exact<{ [key: string]: never }>;
-
-export type GetTaxRatesQuery = {
-    taxRates: Pick<TaxRateList, 'totalItems'> & { items: Array<TaxRateFragment> };
-};
-
 export type GetTaxRateQueryVariables = Exact<{
     id: Scalars['ID'];
 }>;
@@ -6683,6 +6741,51 @@ export namespace GetCustomerCount {
     export type Variables = GetCustomerCountQueryVariables;
     export type Query = GetCustomerCountQuery;
     export type Customers = NonNullable<GetCustomerCountQuery['customers']>;
+}
+
+export namespace DeepFieldResolutionTestQuery {
+    export type Variables = DeepFieldResolutionTestQueryQueryVariables;
+    export type Query = DeepFieldResolutionTestQueryQuery;
+    export type Product = NonNullable<DeepFieldResolutionTestQueryQuery['product']>;
+    export type Variants = NonNullable<
+        NonNullable<NonNullable<DeepFieldResolutionTestQueryQuery['product']>['variants']>[number]
+    >;
+    export type TaxRateApplied = NonNullable<
+        NonNullable<
+            NonNullable<NonNullable<DeepFieldResolutionTestQueryQuery['product']>['variants']>[number]
+        >['taxRateApplied']
+    >;
+    export type CustomerGroup = NonNullable<
+        NonNullable<
+            NonNullable<
+                NonNullable<NonNullable<DeepFieldResolutionTestQueryQuery['product']>['variants']>[number]
+            >['taxRateApplied']
+        >['customerGroup']
+    >;
+    export type Customers = NonNullable<
+        NonNullable<
+            NonNullable<
+                NonNullable<
+                    NonNullable<NonNullable<DeepFieldResolutionTestQueryQuery['product']>['variants']>[number]
+                >['taxRateApplied']
+            >['customerGroup']
+        >['customers']
+    >;
+    export type Items = NonNullable<
+        NonNullable<
+            NonNullable<
+                NonNullable<
+                    NonNullable<
+                        NonNullable<
+                            NonNullable<
+                                NonNullable<DeepFieldResolutionTestQueryQuery['product']>['variants']
+                            >[number]
+                        >['taxRateApplied']
+                    >['customerGroup']
+                >['customers']
+            >['items']
+        >[number]
+    >;
 }
 
 export namespace Authenticate {
@@ -8143,6 +8246,13 @@ export namespace RemovePromotionFromChannel {
     >;
 }
 
+export namespace GetTaxRates {
+    export type Variables = GetTaxRatesQueryVariables;
+    export type Query = GetTaxRatesQuery;
+    export type TaxRates = NonNullable<GetTaxRatesQuery['taxRates']>;
+    export type Items = NonNullable<NonNullable<NonNullable<GetTaxRatesQuery['taxRates']>['items']>[number]>;
+}
+
 export namespace CancelJob {
     export type Variables = CancelJobMutationVariables;
     export type Mutation = CancelJobMutation;
@@ -8405,6 +8515,12 @@ export namespace GetPaymentMethodList {
     export type Items = NonNullable<
         NonNullable<NonNullable<GetPaymentMethodListQuery['paymentMethods']>['items']>[number]
     >;
+}
+
+export namespace DeletePaymentMethod {
+    export type Variables = DeletePaymentMethodMutationVariables;
+    export type Mutation = DeletePaymentMethodMutation;
+    export type DeletePaymentMethod = NonNullable<DeletePaymentMethodMutation['deletePaymentMethod']>;
 }
 
 export namespace TransitionPaymentToState {
@@ -8791,13 +8907,6 @@ export namespace DeleteTaxCategory {
     export type Variables = DeleteTaxCategoryMutationVariables;
     export type Mutation = DeleteTaxCategoryMutation;
     export type DeleteTaxCategory = NonNullable<DeleteTaxCategoryMutation['deleteTaxCategory']>;
-}
-
-export namespace GetTaxRates {
-    export type Variables = GetTaxRatesQueryVariables;
-    export type Query = GetTaxRatesQuery;
-    export type TaxRates = NonNullable<GetTaxRatesQuery['taxRates']>;
-    export type Items = NonNullable<NonNullable<NonNullable<GetTaxRatesQuery['taxRates']>['items']>[number]>;
 }
 
 export namespace GetTaxRate {

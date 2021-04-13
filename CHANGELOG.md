@@ -1,3 +1,42 @@
+## 1.0.0-beta.7 (2021-04-05)
+
+
+#### Features
+
+* **admin-ui** AssetPickerDialog can take initial tags ([03c6706](https://github.com/vendure-ecommerce/vendure/commit/03c6706))
+* **asset-server-plugin** Support Apple M1 (update Sharp to 0.28) ([1335080](https://github.com/vendure-ecommerce/vendure/commit/1335080)), closes [#803](https://github.com/vendure-ecommerce/vendure/issues/803)
+* **core** Add ability to get variants for a specific product in productVariants query ([1da0592](https://github.com/vendure-ecommerce/vendure/commit/1da0592)), closes [#786](https://github.com/vendure-ecommerce/vendure/issues/786)
+* **core** Add name and description fields to eligiblePaymentMethods query ([fd28208](https://github.com/vendure-ecommerce/vendure/commit/fd28208)), closes [#738](https://github.com/vendure-ecommerce/vendure/issues/738)
+
+#### Fixes
+
+* **admin-ui** Fix asset search component ([d65277e](https://github.com/vendure-ecommerce/vendure/commit/d65277e))
+* **admin-ui** Fix errors caused by lists greater than 1000 items ([5844715](https://github.com/vendure-ecommerce/vendure/commit/5844715)), closes [#807](https://github.com/vendure-ecommerce/vendure/issues/807)
+* **admin-ui** Fix facet display in product search bar ([a05044d](https://github.com/vendure-ecommerce/vendure/commit/a05044d))
+* **core** Fix product query by slug ([2ace0eb](https://github.com/vendure-ecommerce/vendure/commit/2ace0eb)), closes [#800](https://github.com/vendure-ecommerce/vendure/issues/800)
+
+## 1.0.0-beta.6 (2021-04-01)
+
+
+#### Fixes
+
+* **core** Correct ordering of Collection breadcrumbs ([92952fb](https://github.com/vendure-ecommerce/vendure/commit/92952fb))
+* **core** Correctly defer incomplete jobs on shutdown ([d3fa83a](https://github.com/vendure-ecommerce/vendure/commit/d3fa83a))
+* **core** Correctly handle multiple external auth methods ([b397ba2](https://github.com/vendure-ecommerce/vendure/commit/b397ba2)), closes [#695](https://github.com/vendure-ecommerce/vendure/issues/695)
+* **core** Fix edge case in auth guard resolver detection ([b190300](https://github.com/vendure-ecommerce/vendure/commit/b190300))
+* **core** Fix memory leak in default JobQueueStrategies ([e9e3c18](https://github.com/vendure-ecommerce/vendure/commit/e9e3c18))
+* **core** Fix some issues with sorting/filtering calculated properties ([2d89554](https://github.com/vendure-ecommerce/vendure/commit/2d89554))
+* **core** Fix sorting of Order calculated properties in Postgres ([e9b18fe](https://github.com/vendure-ecommerce/vendure/commit/e9b18fe))
+* **core** Fix TypeScript TS2502 error in Translation<T> type ([a4243c4](https://github.com/vendure-ecommerce/vendure/commit/a4243c4)), closes [#787](https://github.com/vendure-ecommerce/vendure/issues/787)
+* **core** Prevent customer data leak via Shop API ([8ea544b](https://github.com/vendure-ecommerce/vendure/commit/8ea544b)), closes [#730](https://github.com/vendure-ecommerce/vendure/issues/730)
+* **core** Resolver permission changes work with REST routes ([b61b47d](https://github.com/vendure-ecommerce/vendure/commit/b61b47d))
+
+#### Features
+
+* **core** AssetService can create assets from Readable streams ([9d80145](https://github.com/vendure-ecommerce/vendure/commit/9d80145))
+* **core** Enable the use of Permissions of GraphQL field resolvers ([5c837b8](https://github.com/vendure-ecommerce/vendure/commit/5c837b8)), closes [#730](https://github.com/vendure-ecommerce/vendure/issues/730)
+* **core** Implement size limits for paginated list results ([92be4e0](https://github.com/vendure-ecommerce/vendure/commit/92be4e0)), closes [#751](https://github.com/vendure-ecommerce/vendure/issues/751)
+
 ## 1.0.0-beta.5 (2021-03-24)
 
 
