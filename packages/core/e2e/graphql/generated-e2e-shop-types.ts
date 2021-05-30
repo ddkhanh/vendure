@@ -1851,11 +1851,6 @@ export type Order = Node & {
      * methods.
      */
     surcharges: Array<Surcharge>;
-    /**
-     * Order-level adjustments to the order total, such as discounts from promotions
-     * @deprecated Use `discounts` instead
-     */
-    adjustments: Array<Adjustment>;
     discounts: Array<Discount>;
     /** An array of all coupon codes applied to the Order */
     couponCodes: Array<Scalars['String']>;
@@ -1971,8 +1966,6 @@ export type OrderItem = Node & {
     /** The proratedUnitPrice including tax */
     proratedUnitPriceWithTax: Scalars['Int'];
     unitTax: Scalars['Int'];
-    /** @deprecated `unitPrice` is now always without tax */
-    unitPriceIncludesTax: Scalars['Boolean'];
     taxRate: Scalars['Float'];
     adjustments: Array<Adjustment>;
     taxLines: Array<TaxLine>;
@@ -2015,8 +2008,6 @@ export type OrderLine = Node & {
     proratedUnitPriceWithTax: Scalars['Int'];
     quantity: Scalars['Int'];
     items: Array<OrderItem>;
-    /** @deprecated Use `linePriceWithTax` instead */
-    totalPrice: Scalars['Int'];
     taxRate: Scalars['Float'];
     /** The total price of the line excluding tax and discounts. */
     linePrice: Scalars['Int'];
@@ -2036,8 +2027,6 @@ export type OrderLine = Node & {
     proratedLinePriceWithTax: Scalars['Int'];
     /** The total tax on this line */
     lineTax: Scalars['Int'];
-    /** @deprecated Use `discounts` instead */
-    adjustments: Array<Adjustment>;
     discounts: Array<Discount>;
     taxLines: Array<TaxLine>;
     order: Order;
@@ -2168,13 +2157,9 @@ export type SearchResult = {
     slug: Scalars['String'];
     productId: Scalars['ID'];
     productName: Scalars['String'];
-    /** @deprecated Use `productAsset.preview` instead */
-    productPreview: Scalars['String'];
     productAsset?: Maybe<SearchResultAsset>;
     productVariantId: Scalars['ID'];
     productVariantName: Scalars['String'];
-    /** @deprecated Use `productVariantAsset.preview` instead */
-    productVariantPreview: Scalars['String'];
     productVariantAsset?: Maybe<SearchResultAsset>;
     price: SearchResultPrice;
     priceWithTax: SearchResultPrice;
@@ -2248,8 +2233,6 @@ export type ProductVariant = Node & {
     assets: Array<Asset>;
     price: Scalars['Int'];
     currencyCode: CurrencyCode;
-    /** @deprecated price now always excludes tax */
-    priceIncludesTax: Scalars['Boolean'];
     priceWithTax: Scalars['Int'];
     stockLevel: Scalars['String'];
     taxRateApplied: TaxRate;
@@ -2257,7 +2240,7 @@ export type ProductVariant = Node & {
     options: Array<ProductOption>;
     facetValues: Array<FacetValue>;
     translations: Array<ProductVariantTranslation>;
-    customFields?: Maybe<Scalars['JSON']>;
+    customFields?: Maybe<ProductVariantCustomFields>;
 };
 
 export type ProductVariantTranslation = {
@@ -2744,9 +2727,9 @@ export type ProductVariantFilterParameter = {
     name?: Maybe<StringOperators>;
     price?: Maybe<NumberOperators>;
     currencyCode?: Maybe<StringOperators>;
-    priceIncludesTax?: Maybe<BooleanOperators>;
     priceWithTax?: Maybe<NumberOperators>;
     stockLevel?: Maybe<StringOperators>;
+    discountPrice?: Maybe<NumberOperators>;
 };
 
 export type ProductVariantSortParameter = {
@@ -2759,6 +2742,7 @@ export type ProductVariantSortParameter = {
     price?: Maybe<SortOrder>;
     priceWithTax?: Maybe<SortOrder>;
     stockLevel?: Maybe<SortOrder>;
+    discountPrice?: Maybe<SortOrder>;
 };
 
 export type CustomerFilterParameter = {
@@ -2831,6 +2815,10 @@ export type UpdateOrderInput = {
     customFields?: Maybe<Scalars['JSON']>;
 };
 
+export type ProductVariantCustomFields = {
+    discountPrice?: Maybe<Scalars['Int']>;
+};
+
 export type AuthenticationInput = {
     native?: Maybe<NativeAuthInput>;
 };
@@ -2868,6 +2856,7 @@ export type TestOrderFragmentFragment = Pick<
             | 'unitPriceWithTax'
             | 'unitPriceChangeSinceAdded'
             | 'unitPriceWithTaxChangeSinceAdded'
+            | 'proratedUnitPriceWithTax'
         > & {
             productVariant: Pick<ProductVariant, 'id'>;
             discounts: Array<
@@ -2925,10 +2914,8 @@ export type SearchProductsShopQuery = {
                 SearchResult,
                 | 'productId'
                 | 'productName'
-                | 'productPreview'
                 | 'productVariantId'
                 | 'productVariantName'
-                | 'productVariantPreview'
                 | 'sku'
                 | 'collectionIds'
             > & { price: Pick<PriceRange, 'min' | 'max'> | Pick<SinglePrice, 'value'> }
@@ -3089,7 +3076,6 @@ export type GetActiveOrderWithPriceDataQuery = {
                     | 'linePriceWithTax'
                 > & {
                     items: Array<Pick<OrderItem, 'id' | 'unitPrice' | 'unitPriceWithTax' | 'taxRate'>>;
-                    adjustments: Array<Pick<Adjustment, 'amount' | 'type'>>;
                     taxLines: Array<Pick<TaxLine, 'taxRate' | 'description'>>;
                 }
             >;
@@ -3603,13 +3589,6 @@ export namespace GetActiveOrderWithPriceData {
             NonNullable<
                 NonNullable<NonNullable<GetActiveOrderWithPriceDataQuery['activeOrder']>['lines']>[number]
             >['items']
-        >[number]
-    >;
-    export type Adjustments = NonNullable<
-        NonNullable<
-            NonNullable<
-                NonNullable<NonNullable<GetActiveOrderWithPriceDataQuery['activeOrder']>['lines']>[number]
-            >['adjustments']
         >[number]
     >;
     export type TaxLines = NonNullable<

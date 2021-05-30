@@ -1605,11 +1605,6 @@ export type Order = Node & {
    * methods.
    */
   surcharges: Array<Surcharge>;
-  /**
-   * Order-level adjustments to the order total, such as discounts from promotions
-   * @deprecated Use `discounts` instead
-   */
-  adjustments: Array<Adjustment>;
   discounts: Array<Discount>;
   /** An array of all coupon codes applied to the Order */
   couponCodes: Array<Scalars['String']>;
@@ -2114,8 +2109,6 @@ export type ProductVariant = Node & {
   assets: Array<Asset>;
   price: Scalars['Int'];
   currencyCode: CurrencyCode;
-  /** @deprecated price now always excludes tax */
-  priceIncludesTax: Scalars['Boolean'];
   priceWithTax: Scalars['Int'];
   stockLevel: Scalars['String'];
   taxRateApplied: TaxRate;
@@ -2123,7 +2116,7 @@ export type ProductVariant = Node & {
   options: Array<ProductOption>;
   facetValues: Array<FacetValue>;
   translations: Array<ProductVariantTranslation>;
-  customFields?: Maybe<Scalars['JSON']>;
+  customFields?: Maybe<ProductVariantCustomFields>;
 };
 
 
@@ -2187,13 +2180,9 @@ export type SearchResult = {
   slug: Scalars['String'];
   productId: Scalars['ID'];
   productName: Scalars['String'];
-  /** @deprecated Use `productAsset.preview` instead */
-  productPreview: Scalars['String'];
   productAsset?: Maybe<SearchResultAsset>;
   productVariantId: Scalars['ID'];
   productVariantName: Scalars['String'];
-  /** @deprecated Use `productVariantAsset.preview` instead */
-  productVariantPreview: Scalars['String'];
   productVariantAsset?: Maybe<SearchResultAsset>;
   price: SearchResultPrice;
   priceWithTax: SearchResultPrice;
@@ -2268,7 +2257,7 @@ export type CreateProductVariantInput = {
   outOfStockThreshold?: Maybe<Scalars['Int']>;
   useGlobalOutOfStockThreshold?: Maybe<Scalars['Boolean']>;
   trackInventory?: Maybe<GlobalFlag>;
-  customFields?: Maybe<Scalars['JSON']>;
+  customFields?: Maybe<CreateProductVariantCustomFieldsInput>;
 };
 
 export type UpdateProductVariantInput = {
@@ -2285,7 +2274,7 @@ export type UpdateProductVariantInput = {
   outOfStockThreshold?: Maybe<Scalars['Int']>;
   useGlobalOutOfStockThreshold?: Maybe<Scalars['Boolean']>;
   trackInventory?: Maybe<GlobalFlag>;
-  customFields?: Maybe<Scalars['JSON']>;
+  customFields?: Maybe<UpdateProductVariantCustomFieldsInput>;
 };
 
 export type AssignProductsToChannelInput = {
@@ -4166,8 +4155,6 @@ export type OrderItem = Node & {
   /** The proratedUnitPrice including tax */
   proratedUnitPriceWithTax: Scalars['Int'];
   unitTax: Scalars['Int'];
-  /** @deprecated `unitPrice` is now always without tax */
-  unitPriceIncludesTax: Scalars['Boolean'];
   taxRate: Scalars['Float'];
   adjustments: Array<Adjustment>;
   taxLines: Array<TaxLine>;
@@ -4211,8 +4198,6 @@ export type OrderLine = Node & {
   proratedUnitPriceWithTax: Scalars['Int'];
   quantity: Scalars['Int'];
   items: Array<OrderItem>;
-  /** @deprecated Use `linePriceWithTax` instead */
-  totalPrice: Scalars['Int'];
   taxRate: Scalars['Float'];
   /** The total price of the line excluding tax and discounts. */
   linePrice: Scalars['Int'];
@@ -4232,8 +4217,6 @@ export type OrderLine = Node & {
   proratedLinePriceWithTax: Scalars['Int'];
   /** The total tax on this line */
   lineTax: Scalars['Int'];
-  /** @deprecated Use `discounts` instead */
-  adjustments: Array<Adjustment>;
   discounts: Array<Discount>;
   taxLines: Array<TaxLine>;
   order: Order;
@@ -4851,9 +4834,9 @@ export type ProductVariantFilterParameter = {
   name?: Maybe<StringOperators>;
   price?: Maybe<NumberOperators>;
   currencyCode?: Maybe<StringOperators>;
-  priceIncludesTax?: Maybe<BooleanOperators>;
   priceWithTax?: Maybe<NumberOperators>;
   stockLevel?: Maybe<StringOperators>;
+  discountPrice?: Maybe<NumberOperators>;
 };
 
 export type ProductVariantSortParameter = {
@@ -4869,6 +4852,7 @@ export type ProductVariantSortParameter = {
   price?: Maybe<SortOrder>;
   priceWithTax?: Maybe<SortOrder>;
   stockLevel?: Maybe<SortOrder>;
+  discountPrice?: Maybe<SortOrder>;
 };
 
 export type PromotionFilterParameter = {
@@ -4967,6 +4951,19 @@ export type HistoryEntrySortParameter = {
   id?: Maybe<SortOrder>;
   createdAt?: Maybe<SortOrder>;
   updatedAt?: Maybe<SortOrder>;
+};
+
+export type ProductVariantCustomFields = {
+  __typename?: 'ProductVariantCustomFields';
+  discountPrice?: Maybe<Scalars['Int']>;
+};
+
+export type CreateProductVariantCustomFieldsInput = {
+  discountPrice?: Maybe<Scalars['Int']>;
+};
+
+export type UpdateProductVariantCustomFieldsInput = {
+  discountPrice?: Maybe<Scalars['Int']>;
 };
 
 export type AuthenticationInput = {
@@ -6688,7 +6685,7 @@ export type ProductSelectorSearchQuery = { search: (
     { __typename?: 'SearchResponse' }
     & { items: Array<(
       { __typename?: 'SearchResult' }
-      & Pick<SearchResult, 'productVariantId' | 'productVariantName' | 'productPreview' | 'sku'>
+      & Pick<SearchResult, 'productVariantId' | 'productVariantName' | 'sku'>
       & { productAsset?: Maybe<(
         { __typename?: 'SearchResultAsset' }
         & Pick<SearchResultAsset, 'id' | 'preview'>

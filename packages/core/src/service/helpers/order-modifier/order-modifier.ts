@@ -159,8 +159,8 @@ export class OrderModifier {
             for (let i = currentQuantity; i < quantity; i++) {
                 newOrderItems.push(
                     new OrderItem({
-                        listPrice: orderLine.productVariant.price,
-                        listPriceIncludesTax: orderLine.productVariant.priceIncludesTax,
+                        listPrice: orderLine.productVariant.listPrice,
+                        listPriceIncludesTax: orderLine.productVariant.listPriceIncludesTax,
                         adjustments: [],
                         taxLines: [],
                         lineId: orderLine.id,

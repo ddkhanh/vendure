@@ -31,6 +31,7 @@ export const TEST_ORDER_FRAGMENT = gql`
             unitPriceWithTax
             unitPriceChangeSinceAdded
             unitPriceWithTaxChangeSinceAdded
+            proratedUnitPriceWithTax
             productVariant {
                 id
             }
@@ -128,10 +129,8 @@ export const SEARCH_PRODUCTS_SHOP = gql`
             items {
                 productId
                 productName
-                productPreview
                 productVariantId
                 productVariantName
-                productVariantPreview
                 sku
                 collectionIds
                 price {
@@ -342,10 +341,6 @@ export const GET_ACTIVE_ORDER_WITH_PRICE_DATA = gql`
                     unitPrice
                     unitPriceWithTax
                     taxRate
-                }
-                adjustments {
-                    amount
-                    type
                 }
                 taxLines {
                     taxRate

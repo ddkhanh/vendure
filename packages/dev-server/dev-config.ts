@@ -6,13 +6,16 @@ import {
     Asset,
     DefaultJobQueuePlugin,
     DefaultLogger,
+    defaultPromotionActions,
     DefaultSearchPlugin,
     dummyPaymentHandler,
     examplePaymentHandler,
+    FulfillmentHandler,
     LanguageCode,
     LogLevel,
     manualFulfillmentHandler,
     PaymentMethodEligibilityChecker,
+    PromotionItemAction,
     VendureConfig,
 } from '@vendure/core';
 import { ElasticsearchPlugin } from '@vendure/elasticsearch-plugin';
@@ -25,6 +28,35 @@ const testPaymentChecker = new PaymentMethodEligibilityChecker({
     description: [{ languageCode: LanguageCode.en, value: 'test checker' }],
     args: {},
     check: (ctx, order) => true,
+});
+
+const testPromoAction = new PromotionItemAction({
+    code: 'discount-price-action',
+    description: [{ languageCode: LanguageCode.en, value: 'Apply discount price' }],
+    args: {},
+    execute: (ctx, orderItem, orderLine) => {
+        if ((orderLine.productVariant.customFields as any).discountPrice) {
+            return -(
+                orderLine.unitPriceWithTax - (orderLine.productVariant.customFields as any).discountPrice
+            );
+        }
+        return 0;
+    },
+});
+
+const myHandler = new FulfillmentHandler({
+    code: 'test-handler',
+    args: {},
+    description: [{ languageCode: LanguageCode.en, value: 'test fulfillment handler' }],
+    createFulfillment: ctx => {
+        return {
+            method: 'test-handler',
+            trackingCode: '123123123123',
+            customFields: {
+                logoId: 1,
+            },
+        };
+    },
 });
 
 /**
@@ -51,7 +83,6 @@ export const devConfig: VendureConfig = {
     authOptions: {
         disableAuth: false,
         tokenMethod: 'cookie',
-        sessionSecret: 'some-secret',
         requireVerification: true,
         customPermissions: [],
     },
@@ -65,15 +96,19 @@ export const devConfig: VendureConfig = {
         paymentMethodEligibilityCheckers: [testPaymentChecker],
         paymentMethodHandlers: [dummyPaymentHandler],
     },
+    promotionOptions: {
+        promotionActions: [...defaultPromotionActions, testPromoAction],
+    },
     customFields: {
         /*Asset: [{ name: 'description', type: 'string' }],*/
+        ProductVariant: [{ name: 'discountPrice', type: 'int' }],
     },
     logger: new DefaultLogger({ level: LogLevel.Info }),
     importExportOptions: {
         importAssetsDir: path.join(__dirname, 'import-assets'),
     },
     shippingOptions: {
-        fulfillmentHandlers: [manualFulfillmentHandler],
+        fulfillmentHandlers: [manualFulfillmentHandler, myHandler],
     },
     plugins: [
         AssetServerPlugin.init({
